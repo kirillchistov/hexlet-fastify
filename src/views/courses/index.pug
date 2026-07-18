@@ -2,9 +2,22 @@ extends ../layouts/page
 
 block content
   h1.page-title= header
-  ul.course-list
-    each course in courses
-      li.course-card
-        a(href=`/courses/${course.id}`)
-          h2= course.title
-          p= course.description
+
+  form.search-form(role='form' method='GET' action='/courses')
+    label.search-field
+      span Поиск по названию
+      input(type='search' name='term' value=term placeholder='Например, Python')
+    label.search-field
+      span Поиск по описанию
+      input(type='search' name='descriptionTerm' value=descriptionTerm placeholder='Например, REST API')
+    input.search-submit(type='submit' value='search')
+
+  if courses.length
+    ul.course-list
+      each course in courses
+        li.course-card
+          a(href=`/courses/${course.id}`)
+            h2= course.title
+            p= course.description
+  else
+    p.lead Курсы не найдены. Попробуйте изменить параметры поиска.
