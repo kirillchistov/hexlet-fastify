@@ -1,0 +1,10 @@
+extends ../layouts/page
+
+block content
+  h1.page-title= header
+  ul.course-list
+    each course in courses
+      li.course-card
+        a(href=`/courses/${course.id}`)
+          h2= course.title
+          p= course.description
