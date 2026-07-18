@@ -1,0 +1,42 @@
+{
+  "name": "hexlet-fastify",
+  "version": "1.0.0",
+  "description": "learning webdev and fastify on hexlet",
+  "license": "ISC",
+  "author": "",
+  "engines": {
+    "node": ">=26.0"
+  },
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "biome check --write .",
+    "lint:fix": "biome check --write --fix .",
+    "dev": "node bin/index.js"
+  },
+  "dependencies": {
+    "fastify": "^5.10.0",
+    "fastify-cli": "^8.0.0",
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/flash": "^6.0.3",
+    "@fastify/formbody": "^8.0.2",
+    "@fastify/middie": "^9.3.2",
+    "@fastify/secure-session": "^8.3.0",
+    "@fastify/session": "^11.1.1",
+    "@fastify/view": "^11.1.1",
+    "body-parser": "^2.2.2",
+    "cookie-parser": "^1.4.7",
+    "fastify-method-override-wrapper": "^1.0.6",
+    "fastify-reverse-routes": "^3.0.0",
+    "morgan": "^1.10.1",
+    "pug": "^3.0.4",
+    "sanitize-html": "^2.17.4",
+    "sqlite3": "^6.0.1",
+    "yup": "^1.7.1"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.2.4",
+    "vitest": "^4.0.15"
+  }
+}
