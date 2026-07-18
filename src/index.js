@@ -78,6 +78,13 @@ export default async () => {
     reply.send('User build')
   })
 
+  app.get('/users/show', (req, reply) => {
+    reply.view('users/show', {
+      title: 'Пользователь',
+      userId: req.query.userId || '',
+    })
+  })
+
   app.get('/users/:id', (req, reply) => {
     const { id } = req.params
     const user = state.users.find((user) => user.id === parseInt(id, 10))
