@@ -2,12 +2,14 @@ extends ../layouts/page
 
 block content
   h1.page-title Новый курс
+  if error
+    p.form-error= error.message
 
   form.form-card(action='/courses' method='post')
     div.form-field
       label Название:
-        input(type='text' name='title' required=true)
+        input(type='text' name='title' value=courseTitle required=true)
     div.form-field
       label Описание:
-        textarea(name='description' required=true rows='4')
+        textarea(name='description' required=true rows='4')= description
     input.form-submit(type='submit' value='Добавить курс')

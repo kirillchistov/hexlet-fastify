@@ -2,6 +2,7 @@ import fastify from 'fastify'
 import formbody from '@fastify/formbody'
 import view from '@fastify/view'
 import pug from 'pug'
+import yup from 'yup'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import userRepository from './repositories/users.js'
@@ -23,18 +24,56 @@ export default async () => {
     },
   })
 
-  app.get('/', (req, reply) => {
-    reply.view('index', { title: 'Главная' })
+  app.get('/', (req, res) => {
+    res.view('index', { title: 'Главная' })
   })
 
-  app.get('/users', (req, reply) => {
-    reply.view('users/index', {
+  app.get('/users', (req, res) => {
+    res.view('users/index', {
       title: 'Пользователи',
       users: userRepository.all(),
     })
   })
 
-  app.post('/users', (req, reply) => {
+  app.post('/users', {
+    attachValidation: true,
+    schema: {
+      body: yup.object({
+        name: yup.string().min(2, 'Имя должно быть не меньше двух символов'),
+        email: yup.string().email(),
+        password: yup.string().min(5),
+        passwordConfirmation: yup.string().min(5),
+      }),
+    },
+    validatorCompiler: ({ schema, method, url, httpPart }) => (data) => {
+      if (data.password !== data.passwordConfirmation) {
+        return {
+          error: Error('Password confirmation is not equal the password'),
+        }
+      }
+      try {
+        const result = schema.validateSync(data)
+        return { value: result }
+      }
+      catch (e) {
+        return { error: e }
+      }
+    },
+  }, (req, res) => {
+    const { name, email, password, passwordConfirmation } = req.body
+
+    if (req.validationError) {
+      res.view('users/new', {
+        title: 'Новый пользователь',
+        name,
+        email,
+        password,
+        passwordConfirmation,
+        error: req.validationError,
+      })
+      return
+    }
+
     const user = {
       name: (req.body.name || '').trim(),
       email: req.body.email.trim().toLowerCase(),
@@ -42,55 +81,84 @@ export default async () => {
     }
 
     userRepository.create(user)
-    reply.redirect('/users')
+    res.redirect('/users')
   })
 
-  app.get('/hello', (req, reply) => {
+  app.get('/hello', (req, res) => {
     const name = req.query.name || 'World'
-    reply.send(`Hello, ${name}!`)
+    res.send(`Hello, ${name}!`)
   })
 
-  app.get('/users/new', (req, reply) => {
-    reply.view('users/new', { title: 'Новый пользователь' })
+  app.get('/users/new', (req, res) => {
+    res.view('users/new', { title: 'Новый пользователь' })
   })
 
-  app.get('/users/show', (req, reply) => {
-    reply.view('users/show', {
+  app.get('/users/show', (req, res) => {
+    res.view('users/show', {
       title: 'Пользователь',
       userId: req.query.userId || '',
     })
   })
 
-  app.get('/users/:id', (req, reply) => {
+  app.get('/users/:id', (req, res) => {
     const user = userRepository.findById(req.params.id)
 
     if (!user) {
-      reply.code(404).send({ message: 'User not found' })
+      res.code(404).send({ message: 'User not found' })
       return
     }
 
-    reply.send(user)
+    res.send(user)
   })
 
-  app.get('/users/:id/post/:postId', (req, reply) => {
-    reply.send(`User ID: ${req.params.id}; Post ID: ${req.params.postId}`)
+  app.get('/users/:id/post/:postId', (req, res) => {
+    res.send(`User ID: ${req.params.id}; Post ID: ${req.params.postId}`)
   })
 
-  app.get('/courses/new', (req, reply) => {
-    reply.view('courses/new', { title: 'Новый курс' })
+  app.get('/courses/new', (req, res) => {
+    res.view('courses/new', { title: 'Новый курс' })
   })
 
-  app.post('/courses', (req, reply) => {
+  app.post('/courses', {
+    attachValidation: true,
+    schema: {
+      body: yup.object({
+        title: yup.string().min(2, 'Название должно быть не меньше двух символов'),
+        description: yup.string().min(10, 'Описание должно быть не меньше 10 символов'),
+      }),
+    },
+    validatorCompiler: ({ schema, method, url, httpPart }) => (data) => {
+      try {
+        const result = schema.validateSync(data)
+        return { value: result }
+      }
+      catch (e) {
+        return { error: e }
+      }
+    },
+  }, (req, res) => {
+    const { title, description } = req.body
+
+    if (req.validationError) {
+      res.view('courses/new', {
+        title: 'Новый курс',
+        courseTitle: title,
+        description,
+        error: req.validationError,
+      })
+      return
+    }
+
     const course = {
       title: req.body.title.trim(),
       description: req.body.description.trim(),
     }
 
     courseRepository.create(course)
-    reply.redirect('/courses')
+    res.redirect('/courses')
   })
 
-  app.get('/courses', (req, reply) => {
+  app.get('/courses', (req, res) => {
     const term = req.query.term ?? null
     const descriptionTerm = req.query.descriptionTerm ?? null
 
@@ -110,7 +178,7 @@ export default async () => {
       )
     }
 
-    reply.view('courses/index', {
+    res.view('courses/index', {
       title: 'Курсы',
       term: term ?? '',
       descriptionTerm: descriptionTerm ?? '',
@@ -119,15 +187,15 @@ export default async () => {
     })
   })
 
-  app.get('/courses/:id', (req, reply) => {
+  app.get('/courses/:id', (req, res) => {
     const course = courseRepository.findById(req.params.id)
 
     if (!course) {
-      reply.code(404).send({ message: 'Course not found' })
+      res.code(404).send({ message: 'Course not found' })
       return
     }
 
-    reply.view('courses/show', {
+    res.view('courses/show', {
       title: course.title,
       course,
     })

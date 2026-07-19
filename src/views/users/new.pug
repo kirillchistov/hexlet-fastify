@@ -2,18 +2,20 @@ extends ../layouts/page
 
 block content
   h1.page-title Новый пользователь
+  if error
+    p.form-error= error.message
 
   form.form-card(action='/users' method='post')
     div.form-field
       label Имя:
-        input(type='text' name='name')
+        input(type='text' name='name' value=name)
     div.form-field
       label Email:
-        input(type='email' name='email' required=true)
+        input(type='email' name='email' value=email required=true)
     div.form-field
       label Пароль:
-        input(type='password' name='password' required=true)
+        input(type='password' name='password' value=password required=true)
     div.form-field
       label Подтверждение пароля:
-        input(type='password' name='passwordConfirmation' required=true)
+        input(type='password' name='passwordConfirmation' value=passwordConfirmation required=true)
     input.form-submit(type='submit' value='Зарегистрировать')
