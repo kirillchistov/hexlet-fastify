@@ -1,143 +1,19 @@
 import fastify from 'fastify'
+import formbody from '@fastify/formbody'
 import view from '@fastify/view'
 import pug from 'pug'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import userRepository from './repositories/users.js'
+import courseRepository from './repositories/courses.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-const state = {
-  users: [
-    {
-      id: 1,
-      name: 'user',
-      email: 'user@example.com',
-      password: 'password',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    {
-      id: 2,
-      name: 'user2',
-      email: 'user2@example.com',
-    },
-    {
-      id: 3,
-      name: 'user3',
-      email: 'user3@example.com',
-      password: 'password',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-  ],
-
-  courses: [
-    {
-      id: 1,
-      title: 'Python-разработчик',
-      description: 'Изучите Python, Django, REST и Fast API для создания веб-приложений',
-    },
-    {
-      id: 2,
-      title: 'Фронтенд-разработчик',
-      description: 'Изучите HTML, CSS, JavaScript и React',
-    },
-    {
-      id: 3,
-      title: 'Java-разработчик',
-      description: 'Изучите Java и фреймворк Spring Boot и REST API',
-    },
-    {
-      id: 4,
-      title: 'PHP-разработчик',
-      description: 'Изучите PHP и Laravel для разработки и проектирования REST API',
-    },
-    {
-      id: 5,
-      title: 'Go-разработчик',
-      description: 'Изучите Go, работу с БД, HTTP, конкурентность, горутины, многопоточность',
-    },
-    {
-      id: 6,
-      title: 'Node.js-разработчик',
-      description: 'Изучите JavaScript, Node.js, Fastify и REST API',
-    },
-    {
-      id: 7,
-      title: 'Fullstack-разработчик на Node.js',
-      description: 'Освоите JavaScript, Node.js, Fastify и React для фронтенда и бэкенда',
-    },
-    {
-      id: 8,
-      title: 'Веб-разработка на Fastify',
-      description: 'Получите навык создания бэкенда и построения HTTP API',
-    },
-    {
-      id: 9,
-      title: 'Основы Python',
-      description: 'Изучите синтаксис, переменные, функции',
-    },
-    {
-      id: 10,
-      title: 'Основы JavaScript',
-      description: 'Изучите язык JavaScript и его практическое применение',
-    },
-    {
-      id: 11,
-      title: 'React',
-      description: 'Освоите React и создание быстрых интерфейсов',
-    },
-    {
-      id: 12,
-      title: 'Django',
-      description: 'Изучите фреймворк Django для создания веб-приложений',
-    },
-    {
-      id: 13,
-      title: 'Laravel',
-      description: 'Изучите фреймворк Laravel для создания веб-приложений',
-    },
-    {
-      id: 14,
-      title: 'Spring Boot',
-      description: 'Навык работы с Spring Boot для масштабируемых веб-приложений',
-    },
-    {
-      id: 15,
-      title: 'REST API в Node.js',
-      description: 'Навык разработки высокопроизводительных API',
-    },
-    {
-      id: 16,
-      title: 'Typescript',
-      description: 'Изучите Typescript и получите навык снижать ошибки, упрощать отладку',
-    },
-    {
-      id: 17,
-      title: 'Основы Go',
-      description: 'Изучите основы Go, структуры, функции и горутины',
-    },
-    {
-      id: 18,
-      title: 'Веб-разработка на Express',
-      description: 'Изучение микрофреймворка Express для создания веб-приложений на JavaScript',
-    },
-    {
-      id: 19,
-      title: 'Основы Java',
-      description: 'Изучите базовые концепции: переменные, условия и циклы',
-    },
-    {
-      id: 20,
-      title: 'Основы PHP',
-      description: 'Изучите основы PHP и создание простых веб-страниц',
-    },
-  ],
-}
-
 export default async () => {
   const app = fastify()
+
+  await app.register(formbody)
 
   await app.register(view, {
     engine: { pug },
@@ -152,11 +28,21 @@ export default async () => {
   })
 
   app.get('/users', (req, reply) => {
-    reply.send('GET /users')
+    reply.view('users/index', {
+      title: 'Пользователи',
+      users: userRepository.all(),
+    })
   })
 
   app.post('/users', (req, reply) => {
-    reply.send('POST /users')
+    const user = {
+      name: (req.body.name || '').trim(),
+      email: req.body.email.trim().toLowerCase(),
+      password: req.body.password,
+    }
+
+    userRepository.create(user)
+    reply.redirect('/users')
   })
 
   app.get('/hello', (req, reply) => {
@@ -165,7 +51,7 @@ export default async () => {
   })
 
   app.get('/users/new', (req, reply) => {
-    reply.send('User build')
+    reply.view('users/new', { title: 'Новый пользователь' })
   })
 
   app.get('/users/show', (req, reply) => {
@@ -176,8 +62,7 @@ export default async () => {
   })
 
   app.get('/users/:id', (req, reply) => {
-    const { id } = req.params
-    const user = state.users.find((user) => user.id === parseInt(id, 10))
+    const user = userRepository.findById(req.params.id)
 
     if (!user) {
       reply.code(404).send({ message: 'User not found' })
@@ -191,11 +76,25 @@ export default async () => {
     reply.send(`User ID: ${req.params.id}; Post ID: ${req.params.postId}`)
   })
 
+  app.get('/courses/new', (req, reply) => {
+    reply.view('courses/new', { title: 'Новый курс' })
+  })
+
+  app.post('/courses', (req, reply) => {
+    const course = {
+      title: req.body.title.trim(),
+      description: req.body.description.trim(),
+    }
+
+    courseRepository.create(course)
+    reply.redirect('/courses')
+  })
+
   app.get('/courses', (req, reply) => {
     const term = req.query.term ?? null
     const descriptionTerm = req.query.descriptionTerm ?? null
 
-    let courses = state.courses
+    let courses = courseRepository.all()
 
     if (term !== null && term !== '') {
       const normalizedTerm = term.toLowerCase()
@@ -221,8 +120,7 @@ export default async () => {
   })
 
   app.get('/courses/:id', (req, reply) => {
-    const { id } = req.params
-    const course = state.courses.find(({ id: courseId }) => courseId === parseInt(id, 10))
+    const course = courseRepository.findById(req.params.id)
 
     if (!course) {
       reply.code(404).send({ message: 'Course not found' })

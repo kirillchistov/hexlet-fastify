@@ -1,0 +1,13 @@
+extends ../layouts/page
+
+block content
+  h1.page-title Новый курс
+
+  form.form-card(action='/courses' method='post')
+    div.form-field
+      label Название:
+        input(type='text' name='title' required=true)
+    div.form-field
+      label Описание:
+        textarea(name='description' required=true rows='4')
+    input.form-submit(type='submit' value='Добавить курс')
