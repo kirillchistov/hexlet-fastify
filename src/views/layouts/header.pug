@@ -1,10 +1,10 @@
 header.site-header
   nav.site-nav
-    a.site-logo(href='/') Hexlet Fastify
+    a.site-logo(href=route('root')) Hexlet Fastify
     ul.site-menu
       li
-        a(href='/') Главная
+        a(href=route('root')) Главная
       li
-        a(href='/courses') Курсы
+        a(href=route('courses')) Курсы
       li
-        a(href='/users') Пользователи
+        a(href=route('users')) Пользователи

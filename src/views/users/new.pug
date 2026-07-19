@@ -5,7 +5,7 @@ block content
   if error
     p.form-error= error.message
 
-  form.form-card(action='/users' method='post')
+  form.form-card(action=route('users') method='post')
     div.form-field
       label Имя:
         input(type='text' name='name' value=name)

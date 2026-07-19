@@ -5,6 +5,8 @@ import pug from 'pug'
 import yup from 'yup'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import fastifyReverseRoutes from 'fastify-reverse-routes'
+import routes from './routes.js'
 import userRepository from './repositories/users.js'
 import courseRepository from './repositories/courses.js'
 
@@ -12,9 +14,12 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 export default async () => {
-  const app = fastify()
+  const app = fastify({ exposeHeadRoutes: false })
 
   await app.register(formbody)
+  await app.register(fastifyReverseRoutes.plugin)
+
+  const route = (name, placeholdersValues) => app.reverse(name, placeholdersValues)
 
   await app.register(view, {
     engine: { pug },
@@ -22,20 +27,24 @@ export default async () => {
     options: {
       pretty: true,
     },
+    defaultContext: {
+      route,
+      routes,
+    },
   })
 
-  app.get('/', (req, res) => {
+  app.get(routes.rootPath(), { name: 'root' }, (req, res) => {
     res.view('index', { title: 'Главная' })
   })
 
-  app.get('/users', (req, res) => {
+  app.get(routes.usersPath(), { name: 'users' }, (req, res) => {
     res.view('users/index', {
       title: 'Пользователи',
       users: userRepository.all(),
     })
   })
 
-  app.post('/users', {
+  app.post(routes.usersPath(), {
     attachValidation: true,
     schema: {
       body: yup.object({
@@ -45,7 +54,7 @@ export default async () => {
         passwordConfirmation: yup.string().min(5),
       }),
     },
-    validatorCompiler: ({ schema, method, url, httpPart }) => (data) => {
+    validatorCompiler: ({ schema }) => (data) => {
       if (data.password !== data.passwordConfirmation) {
         return {
           error: Error('Password confirmation is not equal the password'),
@@ -81,26 +90,26 @@ export default async () => {
     }
 
     userRepository.create(user)
-    res.redirect('/users')
+    res.redirect(route('users'))
   })
 
-  app.get('/hello', (req, res) => {
+  app.get(routes.helloPath(), { name: 'hello' }, (req, res) => {
     const name = req.query.name || 'World'
     res.send(`Hello, ${name}!`)
   })
 
-  app.get('/users/new', (req, res) => {
+  app.get(routes.newUserPath(), { name: 'newUser' }, (req, res) => {
     res.view('users/new', { title: 'Новый пользователь' })
   })
 
-  app.get('/users/show', (req, res) => {
+  app.get(routes.usersShowPath(), { name: 'usersShow' }, (req, res) => {
     res.view('users/show', {
       title: 'Пользователь',
       userId: req.query.userId || '',
     })
   })
 
-  app.get('/users/:id', (req, res) => {
+  app.get(routes.userPath(':id'), { name: 'user' }, (req, res) => {
     const user = userRepository.findById(req.params.id)
 
     if (!user) {
@@ -111,15 +120,15 @@ export default async () => {
     res.send(user)
   })
 
-  app.get('/users/:id/post/:postId', (req, res) => {
+  app.get(routes.userPostPath(':id', ':postId'), { name: 'userPost' }, (req, res) => {
     res.send(`User ID: ${req.params.id}; Post ID: ${req.params.postId}`)
   })
 
-  app.get('/courses/new', (req, res) => {
+  app.get(routes.newCoursePath(), { name: 'newCourse' }, (req, res) => {
     res.view('courses/new', { title: 'Новый курс' })
   })
 
-  app.post('/courses', {
+  app.post(routes.coursesPath(), {
     attachValidation: true,
     schema: {
       body: yup.object({
@@ -127,7 +136,7 @@ export default async () => {
         description: yup.string().min(10, 'Описание должно быть не меньше 10 символов'),
       }),
     },
-    validatorCompiler: ({ schema, method, url, httpPart }) => (data) => {
+    validatorCompiler: ({ schema }) => (data) => {
       try {
         const result = schema.validateSync(data)
         return { value: result }
@@ -155,10 +164,10 @@ export default async () => {
     }
 
     courseRepository.create(course)
-    res.redirect('/courses')
+    res.redirect(route('courses'))
   })
 
-  app.get('/courses', (req, res) => {
+  app.get(routes.coursesPath(), { name: 'courses' }, (req, res) => {
     const term = req.query.term ?? null
     const descriptionTerm = req.query.descriptionTerm ?? null
 
@@ -187,7 +196,7 @@ export default async () => {
     })
   })
 
-  app.get('/courses/:id', (req, res) => {
+  app.get(routes.coursePath(':id'), { name: 'course' }, (req, res) => {
     const course = courseRepository.findById(req.params.id)
 
     if (!course) {

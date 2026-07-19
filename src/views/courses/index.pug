@@ -3,9 +3,9 @@ extends ../layouts/page
 block content
   .page-header
     h1.page-title= header
-    a.button(href='/courses/new') Новый курс
+    a.button(href=route('newCourse')) Новый курс
 
-  form.search-form(role='form' method='GET' action='/courses')
+  form.search-form(role='form' method='GET' action=route('courses'))
     label.search-field
       span Поиск по названию
       input(type='search' name='term' value=term placeholder='Например, Python')
@@ -18,7 +18,7 @@ block content
     ul.course-list
       each course in courses
         li.course-card
-          a(href=`/courses/${course.id}`)
+          a(href=routes.coursePath(course.id))
             h2= course.title
             p= course.description
   else
